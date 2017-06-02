@@ -18,14 +18,21 @@ from string import digits
 token_dict = {}
 stemmer = PorterStemmer()
 #nltk.download('punkt')
-
-qbfile = open("eng.txt","r")
-count = 0
+import glob
+#os.chdir("/mydir")
 lines = []
 index = []
+file_name = []
 page = ""
 
-for aline in qbfile.readlines():
+for file in glob.glob("*.txt"):
+  print(file)
+  qbfile = open(file,"r")
+  count = 0
+  #lines = []
+  #index = []
+  page =""
+  for aline in qbfile.readlines():
 
     lowers = str(aline.lower())
     no_punctuation = lowers.translate(None, string.punctuation)
@@ -42,18 +49,21 @@ for aline in qbfile.readlines():
 
       lines.append(page)
       index.append(count)
+      file_name.append(file)
       page=""
     elif len(values) >= 0 and (str(aline) =="\n" or str(aline) == " \n"):
       continue
     else :
       page = page + " " + str(alines)
-      
-print count
-#data_frame = DataFrame(lines, index=index)
-data_frame = DataFrame(lines,index)
-qbfile.close()
-data_frame.columns = ['text']
+  qbfile.close()    
+  print count
 
+#data_frame = DataFrame(lines, index=index)
+data_frame = DataFrame({'lines':pd.Series(lines),'name': pd.Categorical(file_name)})
+data_frame['page_number'] = index
+#qbfile.close()
+data_frame.columns = ['text','file_name','page_count']
+data_frame.set_index(['file_name','page_count'])
 
 count_vectorizer = CountVectorizer()
 counts = count_vectorizer.fit_transform(data_frame['text'].values)
@@ -69,8 +79,8 @@ km = KMeans(n_clusters=num_clusters)
 km.fit(tfidf)
 clusters = km.labels_.tolist()
 #print clusters
-films = { 'index': index,'cluster' : clusters  }
-frame = pd.DataFrame(films, index = [clusters] , columns = ['index','cluster'])
+films = { 'page_count': index,'cluster' : clusters  }
+frame = pd.DataFrame(films, index = [file_name] , columns = ['page_count','cluster'])
 print frame
 #print frame['cluster'].value_counts()
 #from __future__ import print_function
